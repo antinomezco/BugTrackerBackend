@@ -10,8 +10,7 @@ namespace BugTracker.DTOs.Person
         public string? Name { get; set; }
         public string? Email { get; set; }
         [EnumDataType(typeof(PersonRole))]
-        public string? Role { get; set; }
+        public PersonRole Role { get; set; }
         public DateTime? CreatedDate { get; set; }
-
     }
 }

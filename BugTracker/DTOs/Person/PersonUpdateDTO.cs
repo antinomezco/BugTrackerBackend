@@ -12,6 +12,6 @@ namespace BugTracker.DTOs.Person
         public string? Email { get; set; }
 
         [Required]
-        public string? Role { get; set; }
+        public int Role { get; set; }
     }
 }

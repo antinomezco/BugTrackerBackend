@@ -26,7 +26,7 @@ namespace BugTracker.Controllers
         {
             var personnel = await _context.Personnel.ToListAsync();
 
-            return Ok(personnel);
+            return _mapper.Map<List<PersonDTO>>(personnel);
         }
 
 

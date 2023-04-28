@@ -6,7 +6,6 @@ namespace BugTracker.DTOs.Project
     {
         public string? Name { get; set; }
         public string? Description { get; set; }
-
         public List<int> PersonnelId { get; set; }
     }
 }

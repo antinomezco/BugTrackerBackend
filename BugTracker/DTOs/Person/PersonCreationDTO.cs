@@ -12,10 +12,10 @@ namespace BugTracker.DTOs.Person
         public string? Email { get; set; }
 
         [Required]
-        public DateTime? CreatedDate { get; set; }
+        public DateTime? CreatedDate { get; set; } = DateTime.UtcNow;
 
         [Required]
         [EnumDataType(typeof(PersonRole))]
-        public string? Role { get; set; }
+        public PersonRole Role { get; set; }
     }
 }

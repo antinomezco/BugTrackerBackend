@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BugTracker.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230424023143_PersonProject")]
-    partial class PersonProject
+    [Migration("20230427154831_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -87,6 +87,55 @@ namespace BugTracker.Migrations
                     b.ToTable("Projects");
                 });
 
+            modelBuilder.Entity("BugTracker.Entity.Ticket", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("PersonAssignedId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PersonSubmitterId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TicketPriority")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TicketStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TicketType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PersonAssignedId");
+
+                    b.HasIndex("PersonSubmitterId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("Tickets");
+                });
+
             modelBuilder.Entity("BugTracker.Entity.PersonProject", b =>
                 {
                     b.HasOne("BugTracker.Entity.Person", "Person")
@@ -106,6 +155,29 @@ namespace BugTracker.Migrations
                     b.Navigation("Project");
                 });
 
+            modelBuilder.Entity("BugTracker.Entity.Ticket", b =>
+                {
+                    b.HasOne("BugTracker.Entity.Person", "PersonAssigned")
+                        .WithMany()
+                        .HasForeignKey("PersonAssignedId");
+
+                    b.HasOne("BugTracker.Entity.Person", "PersonSubmitter")
+                        .WithMany()
+                        .HasForeignKey("PersonSubmitterId");
+
+                    b.HasOne("BugTracker.Entity.Project", "Project")
+                        .WithMany("Tickets")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PersonAssigned");
+
+                    b.Navigation("PersonSubmitter");
+
+                    b.Navigation("Project");
+                });
+
             modelBuilder.Entity("BugTracker.Entity.Person", b =>
                 {
                     b.Navigation("PersonnelProjects");
@@ -114,6 +186,8 @@ namespace BugTracker.Migrations
             modelBuilder.Entity("BugTracker.Entity.Project", b =>
                 {
                     b.Navigation("PersonnelProjects");
+
+                    b.Navigation("Tickets");
                 });
 #pragma warning restore 612, 618
         }

@@ -35,6 +35,7 @@ namespace BugTracker.Controllers
             var project = await _context.Projects
                 .Include(projectDB => projectDB.PersonnelProjects)
                 .ThenInclude(personnelProjectDB => personnelProjectDB.Person)
+                .Include(projectDB => projectDB.Tickets)
                 .FirstOrDefaultAsync(x=>x.Id == id);
 
             if(project == null)

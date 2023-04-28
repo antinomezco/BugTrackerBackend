@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using BugTracker.DTOs.Person;
 using BugTracker.DTOs.Project;
+using BugTracker.DTOs.Ticket;
 using BugTracker.Entity;
 
 namespace BugTracker.Utilities
@@ -26,6 +27,11 @@ namespace BugTracker.Utilities
                 .ForMember(project => project.PersonnelProjects, options => options.MapFrom(MapPersonnelUpdateProjects));
             CreateMap<Project, ProjectDTOWithPersonnel>()
                 .ForMember(projectDTO => projectDTO.Personnel, options => options.MapFrom(MapProjectDTOPersonnel));
+
+            CreateMap<TicketCreationDTO, Ticket>();
+            CreateMap<Ticket, TicketDTOWithDetails>();
+            CreateMap<Ticket, TicketDTO>();
+            CreateMap<TicketUpdateDTO, Ticket>();
         }
 
         private List<PersonProject> MapPersonnelProjects(ProjectCreationDTO projectCreationDTO, Project project)
@@ -70,7 +76,9 @@ namespace BugTracker.Utilities
                 result.Add(new PersonDTO()
                 {
                     Id = projectPerson.PersonId,
-                    Name = projectPerson.Person.Name
+                    Name = projectPerson.Person.Name,
+                    Email = projectPerson.Person.Email,
+                    Role = projectPerson.Person.Role
                 });
             }
             return result;

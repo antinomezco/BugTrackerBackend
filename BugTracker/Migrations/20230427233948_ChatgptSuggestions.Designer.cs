@@ -4,6 +4,7 @@ using BugTracker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BugTracker.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230427233948_ChatgptSuggestions")]
+    partial class ChatgptSuggestions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -44,7 +47,7 @@ namespace BugTracker.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Personnel", (string)null);
+                    b.ToTable("Personnel");
                 });
 
             modelBuilder.Entity("BugTracker.Entity.PersonProject", b =>
@@ -59,7 +62,7 @@ namespace BugTracker.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("PersonnelProjects", (string)null);
+                    b.ToTable("PersonnelProjects");
                 });
 
             modelBuilder.Entity("BugTracker.Entity.Project", b =>
@@ -84,7 +87,7 @@ namespace BugTracker.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Projects", (string)null);
+                    b.ToTable("Projects");
                 });
 
             modelBuilder.Entity("BugTracker.Entity.Ticket", b =>
@@ -102,9 +105,6 @@ namespace BugTracker.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ProjectId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SubmitterPersonId")
                         .HasColumnType("int");
 
                     b.Property<int>("TicketPriority")
@@ -126,7 +126,7 @@ namespace BugTracker.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("Tickets", (string)null);
+                    b.ToTable("Tickets");
                 });
 
             modelBuilder.Entity("BugTracker.Entity.TicketPerson", b =>
@@ -140,13 +140,23 @@ namespace BugTracker.Migrations
                     b.Property<int?>("PersonId1")
                         .HasColumnType("int");
 
+                    b.Property<int?>("TicketId1")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("isSubmitter")
+                        .HasColumnType("bit");
+
                     b.HasKey("PersonId", "TicketId");
 
                     b.HasIndex("PersonId1");
 
                     b.HasIndex("TicketId");
 
-                    b.ToTable("TicketsPersonnel", (string)null);
+                    b.HasIndex("TicketId1")
+                        .IsUnique()
+                        .HasFilter("[TicketId1] IS NOT NULL");
+
+                    b.ToTable("TicketsPersonnel");
                 });
 
             modelBuilder.Entity("BugTracker.Entity.PersonProject", b =>
@@ -197,6 +207,10 @@ namespace BugTracker.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BugTracker.Entity.Ticket", null)
+                        .WithOne("SubmitterPerson")
+                        .HasForeignKey("BugTracker.Entity.TicketPerson", "TicketId1");
+
                     b.Navigation("Person");
 
                     b.Navigation("Ticket");
@@ -219,6 +233,8 @@ namespace BugTracker.Migrations
             modelBuilder.Entity("BugTracker.Entity.Ticket", b =>
                 {
                     b.Navigation("AssignedPeople");
+
+                    b.Navigation("SubmitterPerson");
                 });
 #pragma warning restore 612, 618
         }
