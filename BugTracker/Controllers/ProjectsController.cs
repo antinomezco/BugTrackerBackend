@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using BugTracker.DTOs.Person;
 using BugTracker.DTOs.Project;
+using BugTracker.DTOs.Ticket;
 using BugTracker.Entity;
+using BugTracker.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace BugTracker.Controllers
 {
@@ -13,16 +16,18 @@ namespace BugTracker.Controllers
     public class ProjectsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IProjectService _projectService;
         private readonly IMapper _mapper;
 
-        public ProjectsController(ApplicationDbContext context, IMapper mapper)
+        public ProjectsController(ApplicationDbContext context, IProjectService projectService, IMapper mapper)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _projectService = projectService ?? throw new ArgumentNullException(nameof(projectService));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<ProjectDTO>>> Get()
+        public async Task<ActionResult<List<ProjectDTO>>> GetProjects()
         {
             var projects = await _context.Projects.ToListAsync();
 
@@ -30,36 +35,23 @@ namespace BugTracker.Controllers
         }
 
         [HttpGet("{id:int}", Name = "GetProject")]
-        public async Task<ActionResult<ProjectDTOWithPersonnel>> Get(int id)
+        public ActionResult<ProjectDTOWithPersonnel> GetProject(int id)
         {
-            var project = await _context.Projects
-                .Include(projectDB => projectDB.PersonnelProjects)
-                .ThenInclude(personnelProjectDB => personnelProjectDB.Person)
-                .Include(projectDB => projectDB.Tickets)
-                .FirstOrDefaultAsync(x=>x.Id == id);
 
-            if(project == null)
+            var projectWithTicketDetails = _projectService.GetProjectWithTickets(id);
+
+            if (projectWithTicketDetails == null)
                 return NotFound();
 
-            return _mapper.Map<ProjectDTOWithPersonnel>(project);
+            return Ok(projectWithTicketDetails);
         }
 
         [HttpPost]
-        public async Task<ActionResult> Post(ProjectCreationDTO projectCreationDTO)
+        public ActionResult CreateProject(ProjectCreationDTO projectCreationDTO)
         {
-
-            var personnelIds = await _context.Personnel
-                .Where(personnelDB => projectCreationDTO.PersonnelId.Contains(personnelDB.Id))
-                .Select(x => x.Id).ToListAsync();
-
-            if (projectCreationDTO.PersonnelId.Count != personnelIds.Count)
-                return BadRequest("One of the personnel doesn't exist");
-
             var project = _mapper.Map<Project>(projectCreationDTO);
 
-            _context.Add(project);
-
-            await _context.SaveChangesAsync();
+            _projectService.AddProject(project);
 
             var projectDTO = _mapper.Map<ProjectDTO>(project);
 
@@ -67,11 +59,13 @@ namespace BugTracker.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public async Task<ActionResult> Put(int id, ProjectUpdateDTO projectUpdateDTO)
+        public async Task<ActionResult> UpdateProject(int id, ProjectUpdateDTO projectUpdateDTO)
         {
-            var projectDB = await _context.Projects
-                .Include(x => x.PersonnelProjects)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            //var projectDB = await _context.Projects
+            //    .Include(x => x.PersonnelProjects)
+            //    .FirstOrDefaultAsync(x => x.Id == id);
+            var projectDB = _projectService.UpdateProject(id);
+
             if (projectDB== null)
                 return NotFound();
 

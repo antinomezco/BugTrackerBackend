@@ -7,7 +7,7 @@
         public string Description { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-        public List<PersonProject> PersonnelProjects { get; set; }
         public List<Ticket> Tickets { get; set; }
+        public List<PersonProject> PersonnelProjects { get; set; }
     }
 }

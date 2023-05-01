@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BugTracker.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230427233948_ChatgptSuggestions")]
-    partial class ChatgptSuggestions
+    [Migration("20230429042448_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -98,6 +98,9 @@ namespace BugTracker.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("AssignedPersonId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -105,6 +108,9 @@ namespace BugTracker.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SubmitterPersonId")
                         .HasColumnType("int");
 
                     b.Property<int>("TicketPriority")
@@ -124,39 +130,13 @@ namespace BugTracker.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AssignedPersonId");
+
                     b.HasIndex("ProjectId");
 
+                    b.HasIndex("SubmitterPersonId");
+
                     b.ToTable("Tickets");
-                });
-
-            modelBuilder.Entity("BugTracker.Entity.TicketPerson", b =>
-                {
-                    b.Property<int>("PersonId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TicketId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PersonId1")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TicketId1")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("isSubmitter")
-                        .HasColumnType("bit");
-
-                    b.HasKey("PersonId", "TicketId");
-
-                    b.HasIndex("PersonId1");
-
-                    b.HasIndex("TicketId");
-
-                    b.HasIndex("TicketId1")
-                        .IsUnique()
-                        .HasFilter("[TicketId1] IS NOT NULL");
-
-                    b.ToTable("TicketsPersonnel");
                 });
 
             modelBuilder.Entity("BugTracker.Entity.PersonProject", b =>
@@ -180,47 +160,32 @@ namespace BugTracker.Migrations
 
             modelBuilder.Entity("BugTracker.Entity.Ticket", b =>
                 {
+                    b.HasOne("BugTracker.Entity.Person", "AssignedPerson")
+                        .WithMany()
+                        .HasForeignKey("AssignedPersonId");
+
                     b.HasOne("BugTracker.Entity.Project", "Project")
                         .WithMany("Tickets")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Project");
-                });
-
-            modelBuilder.Entity("BugTracker.Entity.TicketPerson", b =>
-                {
-                    b.HasOne("BugTracker.Entity.Person", "Person")
+                    b.HasOne("BugTracker.Entity.Person", "SubmitterPerson")
                         .WithMany()
-                        .HasForeignKey("PersonId")
+                        .HasForeignKey("SubmitterPersonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BugTracker.Entity.Person", null)
-                        .WithMany("TicketsPeople")
-                        .HasForeignKey("PersonId1");
+                    b.Navigation("AssignedPerson");
 
-                    b.HasOne("BugTracker.Entity.Ticket", "Ticket")
-                        .WithMany("AssignedPeople")
-                        .HasForeignKey("TicketId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("Project");
 
-                    b.HasOne("BugTracker.Entity.Ticket", null)
-                        .WithOne("SubmitterPerson")
-                        .HasForeignKey("BugTracker.Entity.TicketPerson", "TicketId1");
-
-                    b.Navigation("Person");
-
-                    b.Navigation("Ticket");
+                    b.Navigation("SubmitterPerson");
                 });
 
             modelBuilder.Entity("BugTracker.Entity.Person", b =>
                 {
                     b.Navigation("PersonnelProjects");
-
-                    b.Navigation("TicketsPeople");
                 });
 
             modelBuilder.Entity("BugTracker.Entity.Project", b =>
@@ -228,13 +193,6 @@ namespace BugTracker.Migrations
                     b.Navigation("PersonnelProjects");
 
                     b.Navigation("Tickets");
-                });
-
-            modelBuilder.Entity("BugTracker.Entity.Ticket", b =>
-                {
-                    b.Navigation("AssignedPeople");
-
-                    b.Navigation("SubmitterPerson");
                 });
 #pragma warning restore 612, 618
         }

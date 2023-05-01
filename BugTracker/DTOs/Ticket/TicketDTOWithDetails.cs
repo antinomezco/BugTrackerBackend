@@ -4,9 +4,9 @@ namespace BugTracker.DTOs.Ticket
 {
     public class TicketDTOWithDetails : TicketDTO
     {
-        public TicketPriority TicketPriority { get; set; }
-        public TicketStatus TicketStatus { get; set; }
-        public TicketType TicketType { get; set; }
+        public string TicketPriority { get; set; }
+        public string TicketStatus { get; set; }
+        public string TicketType { get; set; }
         public DateTime UpdatedDate { get; set; }
     }
 }

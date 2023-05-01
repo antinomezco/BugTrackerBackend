@@ -35,7 +35,8 @@ namespace BugTracker.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -75,8 +76,8 @@ namespace BugTracker.Migrations
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ProjectId = table.Column<int>(type: "int", nullable: false),
-                    PersonSubmitterId = table.Column<int>(type: "int", nullable: true),
-                    PersonAssignedId = table.Column<int>(type: "int", nullable: true),
+                    SubmitterPersonId = table.Column<int>(type: "int", nullable: false),
+                    AssignedPersonId = table.Column<int>(type: "int", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     TicketPriority = table.Column<int>(type: "int", nullable: false),
@@ -87,15 +88,16 @@ namespace BugTracker.Migrations
                 {
                     table.PrimaryKey("PK_Tickets", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Tickets_Personnel_PersonAssignedId",
-                        column: x => x.PersonAssignedId,
+                        name: "FK_Tickets_Personnel_AssignedPersonId",
+                        column: x => x.AssignedPersonId,
                         principalTable: "Personnel",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Tickets_Personnel_PersonSubmitterId",
-                        column: x => x.PersonSubmitterId,
+                        name: "FK_Tickets_Personnel_SubmitterPersonId",
+                        column: x => x.SubmitterPersonId,
                         principalTable: "Personnel",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Tickets_Projects_ProjectId",
                         column: x => x.ProjectId,
@@ -110,19 +112,19 @@ namespace BugTracker.Migrations
                 column: "ProjectId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Tickets_PersonAssignedId",
+                name: "IX_Tickets_AssignedPersonId",
                 table: "Tickets",
-                column: "PersonAssignedId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Tickets_PersonSubmitterId",
-                table: "Tickets",
-                column: "PersonSubmitterId");
+                column: "AssignedPersonId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Tickets_ProjectId",
                 table: "Tickets",
                 column: "ProjectId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Tickets_SubmitterPersonId",
+                table: "Tickets",
+                column: "SubmitterPersonId");
         }
 
         /// <inheritdoc />

@@ -11,7 +11,6 @@ namespace BugTracker.Entity
         public PersonRole Role { get; set; }
         public DateTime CreatedDate  { get; set; }
         public List<PersonProject> PersonnelProjects { get; set; }
-        public List<TicketPerson> TicketsPeople { get; set; }
     }
     public enum PersonRole
     {

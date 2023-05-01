@@ -1,4 +1,6 @@
 using BugTracker;
+using BugTracker.Repositories;
+using BugTracker.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
@@ -7,7 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers()
+var services = builder.Services;
+
+services.AddControllers()
     .AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.Converters.
@@ -19,13 +23,18 @@ builder.Services.AddControllers()
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 }).AddNewtonsoftJson();
     
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("defaultConnection")));
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("defaultConnection")));
+services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddAutoMapper(typeof(Program));
+services.AddEndpointsApiExplorer();
+services.AddSwaggerGen();
+services.AddAutoMapper(typeof(Program));
+services.AddScoped<IProjectService, ProjectService>();
+services.AddScoped<ITicketService, TicketService>();
+services.AddScoped<ITicketRepository, TicketRepository>();
+services.AddScoped<IProjectRepository, ProjectRepository>();
 
 var app = builder.Build();
 

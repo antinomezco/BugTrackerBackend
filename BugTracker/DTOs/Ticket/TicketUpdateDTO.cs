@@ -7,7 +7,8 @@ namespace BugTracker.DTOs.Ticket
         public string Title { get; set; }
         public string Description { get; set; }
         public int ProjectId { get; set; }
-        public int PersonAssignedId { get; set; }
+        public int? AssignedPersonId { get; set; }
+        public bool IsResolved { get; set; }
         public DateTime UpdatedDate { get; set; }
         public TicketPriority TicketPriority { get; set; }
         public TicketStatus TicketStatus { get; set; }

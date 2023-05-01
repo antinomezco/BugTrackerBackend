@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using BugTracker.DTOs.Person;
+using BugTracker.DTOs.Ticket;
 using BugTracker.Entity;
+using BugTracker.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -14,11 +16,13 @@ namespace BugTracker.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
+        private readonly IProjectService _projectService;
 
-        public PersonnelController(ApplicationDbContext context, IMapper mapper)
+        public PersonnelController(ApplicationDbContext context, IMapper mapper, IProjectService projectService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _projectService = projectService ?? throw new ArgumentNullException(nameof(projectService));
         }
 
         [HttpGet]
@@ -37,7 +41,57 @@ namespace BugTracker.Controllers
                 .Include(personDB => personDB.PersonnelProjects)
                 .ThenInclude(personnelProjectDb => personnelProjectDb.Project)
                 .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (person == null)
+                return NotFound();
+
+            var temp = _mapper.Map<PersonDTOWithProjects>(person);
+
             return _mapper.Map<PersonDTOWithProjects>(person);
+        }
+
+        [HttpGet("{id:int}/tickets", Name = "GetPersonTickets")]
+        public async Task<ActionResult<PersonDTOWithTickets>> GetPersonTickets(int id)
+        {
+            var person = await _context.Personnel
+                .FirstOrDefaultAsync(x => x.Id == id);
+            var ticketData = await _context.Tickets
+                .Where(ticketDB => ticketDB.AssignedPersonId == id)
+                .Select(ticketDB => new
+                {   
+                    ticket = ticketDB,
+                    submitterPersonName = _context.Personnel
+                        .Where(person => person.Id == ticketDB.SubmitterPersonId)
+                        .Select(person => person.Name)
+                        .FirstOrDefault(),
+                    assignedPersonName = _context.Personnel
+                        .Where(person => person.Id == ticketDB.AssignedPersonId)
+                        .Select(person => person.Name)
+                        .FirstOrDefault(),
+                    projectName = _context.Projects
+                        .Where(project => project.Id == ticketDB.ProjectId)
+                        .Select(project => project.Name)
+                        .FirstOrDefault()
+                })
+                .ToListAsync();
+
+            if (person == null)
+                return NotFound();
+
+            var tickets = ticketData.Select(ticket => {
+                var ticketDTO = _mapper.Map<TicketDTO>(ticket.ticket);
+                ticketDTO.SubmitterPersonName = ticket.submitterPersonName;
+                ticketDTO.AssignedPerson = ticket.assignedPersonName;
+                ticketDTO.ProjectName = ticket.projectName;
+
+                return ticketDTO;
+            }).ToList();
+
+            var personWithTickets = _mapper.Map<PersonDTOWithTickets>(person);
+
+            personWithTickets.Tickets = tickets;
+
+            return personWithTickets;
         }
 
         [HttpPost]

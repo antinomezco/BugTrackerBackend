@@ -7,10 +7,13 @@ namespace BugTracker.Entity
         public int Id { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
-        public Project Project { get; set; }
         public int ProjectId { get; set; }
+        public Project Project { get; set; }
         public int SubmitterPersonId { get; set; }
-        public List<TicketPerson> AssignedPeople { get; set; }
+        public Person SubmitterPerson { get; set; }
+        public int? AssignedPersonId { get; set; }
+        public Person AssignedPerson { get; set; }
+        public bool IsResolved { get; set; } = false;
 
         public DateTime CreatedDate { get; set; }
         public DateTime UpdatedDate { get; set; }

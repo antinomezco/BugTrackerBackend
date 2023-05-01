@@ -16,17 +16,19 @@ namespace BugTracker.Utilities
             CreateMap<Person, PersonPatchDTO>().ReverseMap();
             CreateMap<Person, PersonDTOWithProjects>()
                 .ForMember(personDTO => personDTO.Projects, options => options.MapFrom(MapPersonDTOProjects));
+            CreateMap<Person, PersonDTOWithTickets>();
+                //.ForMember(personDTO => personDTO.Tickets, options => options.MapFrom(MapPersonDTOTickets));
 
 
-
-
-            CreateMap<ProjectCreationDTO, Project>()
-                .ForMember(project => project.PersonnelProjects, options => options.MapFrom(MapPersonnelProjects));
+            CreateMap<ProjectCreationDTO, Project>();
             CreateMap<Project, ProjectDTO>();
             CreateMap<ProjectUpdateDTO, Project>()
                 .ForMember(project => project.PersonnelProjects, options => options.MapFrom(MapPersonnelUpdateProjects));
             CreateMap<Project, ProjectDTOWithPersonnel>()
-                .ForMember(projectDTO => projectDTO.Personnel, options => options.MapFrom(MapProjectDTOPersonnel));
+                .ForMember(projectDTO => projectDTO.Personnel, options => options.MapFrom(MapProjectDTOPersonnel))
+                .ForMember(dest => dest.Tickets, opt => opt.MapFrom(src => src.Tickets))
+                .ForMember(dest => dest.Personnel, opt => opt.MapFrom(src => src.PersonnelProjects.Select(pp => pp.Person)));
+            
 
             CreateMap<TicketCreationDTO, Ticket>();
             CreateMap<Ticket, TicketDTOWithDetails>();
@@ -34,20 +36,27 @@ namespace BugTracker.Utilities
             CreateMap<TicketUpdateDTO, Ticket>();
         }
 
-        private List<PersonProject> MapPersonnelProjects(ProjectCreationDTO projectCreationDTO, Project project)
-        {
-            var result = new List<PersonProject>();
+        //private List<TicketDTO> MapPersonDTOTickets(Person person, PersonDTOWithTickets personDTOWithTickets)
+        //{
+        //    var result = new List<TicketDTO>();
 
-            if (projectCreationDTO == null)
-                return result;
+        //    if(personDTOWithTickets.Tickets == null)
+        //        return result;
 
-            foreach(var personId in projectCreationDTO.PersonnelId)
-            {
-                result.Add(new PersonProject { PersonId = personId });
-            }
+        //    foreach (var persTickets in personDTOWithTickets.Tickets)
+        //    {
+        //        result.Add(new TicketDTO
+        //        { 
+        //            Id = persTickets.Id,
+        //            Title = persTickets.Title,
+        //            Description = persTickets.Description,
+        //            ProjectId = persTickets.ProjectId,
+        //            ProjectName = persTickets.ProjectName,
+        //        });
+        //    }
 
-            return result;
-        }
+        //    return result;
+        //}
 
         private List<PersonProject> MapPersonnelUpdateProjects(ProjectUpdateDTO projectUpdateDTO, Project project)
         {
@@ -81,6 +90,7 @@ namespace BugTracker.Utilities
                     Role = projectPerson.Person.Role
                 });
             }
+
             return result;
         }
 
@@ -96,7 +106,9 @@ namespace BugTracker.Utilities
                 result.Add(new ProjectDTO()
                 {
                     Id = personProject.ProjectId,
-                    Name = personProject.Project.Name
+                    Name = personProject.Project.Name,
+                    Description = personProject.Project.Description,
+                    CreatedAt = personProject.Project.CreatedAt
                 });
             }
             return result;

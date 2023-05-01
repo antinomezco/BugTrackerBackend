@@ -6,10 +6,10 @@ namespace BugTracker.DTOs.Person
     public class PersonCreationDTO
     {
         [Required]
-        public string? Name { get; set; }
+        public string Name { get; set; }
 
         [Required]
-        public string? Email { get; set; }
+        public string Email { get; set; }
 
         [Required]
         public DateTime? CreatedDate { get; set; } = DateTime.UtcNow;

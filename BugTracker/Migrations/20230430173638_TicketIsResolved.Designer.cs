@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BugTracker.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230427154831_Initial")]
-    partial class Initial
+    [Migration("20230430173638_TicketIsResolved")]
+    partial class TicketIsResolved
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -82,6 +82,9 @@ namespace BugTracker.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.ToTable("Projects");
@@ -95,19 +98,22 @@ namespace BugTracker.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("AssignedPersonId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("PersonAssignedId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PersonSubmitterId")
-                        .HasColumnType("int");
+                    b.Property<bool>("IsResolved")
+                        .HasColumnType("bit");
 
                     b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SubmitterPersonId")
                         .HasColumnType("int");
 
                     b.Property<int>("TicketPriority")
@@ -127,11 +133,11 @@ namespace BugTracker.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PersonAssignedId");
-
-                    b.HasIndex("PersonSubmitterId");
+                    b.HasIndex("AssignedPersonId");
 
                     b.HasIndex("ProjectId");
+
+                    b.HasIndex("SubmitterPersonId");
 
                     b.ToTable("Tickets");
                 });
@@ -157,13 +163,9 @@ namespace BugTracker.Migrations
 
             modelBuilder.Entity("BugTracker.Entity.Ticket", b =>
                 {
-                    b.HasOne("BugTracker.Entity.Person", "PersonAssigned")
+                    b.HasOne("BugTracker.Entity.Person", "AssignedPerson")
                         .WithMany()
-                        .HasForeignKey("PersonAssignedId");
-
-                    b.HasOne("BugTracker.Entity.Person", "PersonSubmitter")
-                        .WithMany()
-                        .HasForeignKey("PersonSubmitterId");
+                        .HasForeignKey("AssignedPersonId");
 
                     b.HasOne("BugTracker.Entity.Project", "Project")
                         .WithMany("Tickets")
@@ -171,11 +173,17 @@ namespace BugTracker.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("PersonAssigned");
+                    b.HasOne("BugTracker.Entity.Person", "SubmitterPerson")
+                        .WithMany()
+                        .HasForeignKey("SubmitterPersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("PersonSubmitter");
+                    b.Navigation("AssignedPerson");
 
                     b.Navigation("Project");
+
+                    b.Navigation("SubmitterPerson");
                 });
 
             modelBuilder.Entity("BugTracker.Entity.Person", b =>

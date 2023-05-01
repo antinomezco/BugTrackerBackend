@@ -25,11 +25,6 @@ namespace BugTracker.Controllers
         [HttpGet]
         public async Task<ActionResult<List<TicketDTO>>> Get(int projectId)
         {
-            var ticketExists = await _context.Projects.AnyAsync(x => x.Id == projectId);
-
-            if (!ticketExists)
-                return NotFound();
-
             var ticketData = await _context.Tickets
                 .Where(ticketDB => ticketDB.ProjectId == projectId)
                 .Select(ticketDB => new
@@ -38,6 +33,14 @@ namespace BugTracker.Controllers
                     submitterPersonName = _context.Personnel
                         .Where(person => person.Id == ticketDB.SubmitterPersonId)
                         .Select(person => person.Name)
+                        .FirstOrDefault(),
+                    assignedPersonName = _context.Personnel
+                        .Where(person => person.Id == ticketDB.AssignedPersonId)
+                        .Select(person => person.Name)
+                        .FirstOrDefault(),
+                    projectName = _context.Projects
+                        .Where(project => project.Id == ticketDB.ProjectId)
+                        .Select(project => project.Name)
                         .FirstOrDefault()
                 })
                 .ToListAsync();
@@ -45,6 +48,9 @@ namespace BugTracker.Controllers
             var tickets = ticketData.Select(ticket => {
                 var ticketDTO = _mapper.Map<TicketDTO>(ticket.ticket);
                 ticketDTO.SubmitterPersonName = ticket.submitterPersonName;
+                ticketDTO.AssignedPerson = ticket.assignedPersonName;
+                ticketDTO.ProjectName = ticket.projectName;
+
                 return ticketDTO;
             }).ToList();
 
@@ -55,26 +61,42 @@ namespace BugTracker.Controllers
         public async Task<ActionResult<TicketDTOWithDetails>> Get(int projectId, int id)
         {
             var ticket = await _context.Tickets
-                .FirstOrDefaultAsync(x=>x.Id == id);
+                .Where(ticketDB => ticketDB.ProjectId == projectId)
+                .Select(ticketDB => new
+                {
+                    ticket = ticketDB,
+                    submitterPersonName = _context.Personnel
+                        .Where(person => person.Id == ticketDB.SubmitterPersonId)
+                        .Select(person => person.Name)
+                        .FirstOrDefault(),
+                    assignedPersonName = _context.Personnel
+                        .Where(person => person.Id == ticketDB.AssignedPersonId)
+                        .Select(person => person.Name)
+                        .FirstOrDefault(),
+                    projectName = _context.Projects
+                        .Where(project => project.Id == ticketDB.ProjectId)
+                        .Select(project => project.Name)
+                        .FirstOrDefault()
+                })
+                .FirstOrDefaultAsync(x => x.ticket.Id == id);
+
+
             if (ticket == null)
                 return NotFound();
-            var submitterPersonName = await _context.Personnel
-                .Where(x => x.Id == ticket.SubmitterPersonId)
-                .Select(x => x.Name)
-                .FirstOrDefaultAsync();
 
-            var result = _mapper.Map<TicketDTOWithDetails>(ticket);
-            result.SubmitterPersonName = submitterPersonName;
-
+            var result = _mapper.Map<TicketDTOWithDetails>(ticket.ticket);
+            result.ProjectName = ticket.projectName;
+            result.SubmitterPersonName = ticket.submitterPersonName;
+            result.AssignedPerson = ticket.assignedPersonName;
             return result;
         }
 
         [HttpPost]
         public async Task<ActionResult> Post(int projectId, TicketCreationDTO ticketCreationDTO)
         {
-            var ticketExists = await _context.Projects.AnyAsync(x => x.Id == projectId);
+            var projectExists = await _context.Projects.AnyAsync(x => x.Id == projectId);
 
-            if (!ticketExists)
+            if (!projectExists)
                 return NotFound();
 
             var submitterPerson = await _context.Personnel.FindAsync(ticketCreationDTO.SubmitterPersonId);
@@ -87,9 +109,6 @@ namespace BugTracker.Controllers
 
 
             _context.Add(ticket);
-            //await _context.SaveChangesAsync();
-            //ticket.SubmitterPerson = new TicketPerson { Person = submitterPerson };
-            //ticket = _mapper.Map(ticketCreationDTO, ticket);
             await _context.SaveChangesAsync();
 
             var ticketDTOWithDetails = _mapper.Map<TicketDTOWithDetails>(ticket);
@@ -97,14 +116,14 @@ namespace BugTracker.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public async Task<ActionResult> Put(int id, TicketUpdateDTO ticketUpdateDTO)
+        public async Task<ActionResult> Put(int id, int projectId, TicketUpdateDTO ticketUpdateDTO)
         {
             var ticketDB = await _context.Tickets
                 .FirstOrDefaultAsync(x => x.Id == id);
             if (ticketDB == null)
                 return NotFound();
-            if (ticketUpdateDTO.ProjectId != id)
-                return BadRequest("Why did you try to update a ticket in a different project?");
+            //if (ticketUpdateDTO.ProjectId != projectId)
+            //    return BadRequest("Why did you try to update a ticket in a different project?");
 
             ticketDB = _mapper.Map(ticketUpdateDTO, ticketDB);
 
