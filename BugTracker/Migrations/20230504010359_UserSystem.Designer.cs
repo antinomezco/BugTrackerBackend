@@ -4,6 +4,7 @@ using BugTracker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BugTracker.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230504010359_UserSystem")]
+    partial class UserSystem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -110,9 +113,6 @@ namespace BugTracker.Migrations
                     b.Property<int>("ProjectId")
                         .HasColumnType("int");
 
-                    b.Property<string>("SubmitterId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<int>("SubmitterPersonId")
                         .HasColumnType("int");
 
@@ -136,8 +136,6 @@ namespace BugTracker.Migrations
                     b.HasIndex("AssignedPersonId");
 
                     b.HasIndex("ProjectId");
-
-                    b.HasIndex("SubmitterId");
 
                     b.HasIndex("SubmitterPersonId");
 
@@ -373,10 +371,6 @@ namespace BugTracker.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Submitter")
-                        .WithMany()
-                        .HasForeignKey("SubmitterId");
-
                     b.HasOne("BugTracker.Entity.Person", "SubmitterPerson")
                         .WithMany()
                         .HasForeignKey("SubmitterPersonId")
@@ -386,8 +380,6 @@ namespace BugTracker.Migrations
                     b.Navigation("AssignedPerson");
 
                     b.Navigation("Project");
-
-                    b.Navigation("Submitter");
 
                     b.Navigation("SubmitterPerson");
                 });

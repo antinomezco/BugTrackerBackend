@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 
 namespace BugTracker.Entity
 {
@@ -10,7 +11,9 @@ namespace BugTracker.Entity
         public int ProjectId { get; set; }
         public Project Project { get; set; }
         public int SubmitterPersonId { get; set; }
+        public string SubmitterId { get; set; }
         public Person SubmitterPerson { get; set; }
+        public IdentityUser Submitter { get; set; }
         public int? AssignedPersonId { get; set; }
         public Person AssignedPerson { get; set; }
         public bool IsResolved { get; set; } = false;

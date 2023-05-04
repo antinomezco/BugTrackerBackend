@@ -33,5 +33,10 @@ namespace BugTracker.Repositories
                 .Include(x => x.PersonnelProjects)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
+
+        public async Task<Project> CheckProjectExists(int id)
+        {
+            return await _context.Projects.FirstOrDefaultAsync(x => x.Id == id);
+        }
     }
 }

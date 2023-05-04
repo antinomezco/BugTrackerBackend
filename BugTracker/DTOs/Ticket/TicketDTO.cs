@@ -1,5 +1,6 @@
 ﻿using BugTracker.DTOs.Person;
 using BugTracker.Entity;
+using Microsoft.AspNetCore.Identity;
 
 namespace BugTracker.DTOs.Ticket
 {
@@ -10,7 +11,9 @@ namespace BugTracker.DTOs.Ticket
         public string Description { get; set; }
         public int ProjectId { get; set; }
         public string ProjectName { get; set; }
-        public int SubmitterPersonId { get; set; }
+        public string SubmitterPersonId { get; set; }
+        public string SubmitterId { get; set; }
+        public IdentityUser Submitter { get; set; }
         public string SubmitterPersonName { get; set; }
         public int? AssignedPersonId { get; set; }
         public string AssignedPerson { get; set; }

@@ -3,7 +3,11 @@ using BugTracker.DTOs.Person;
 using BugTracker.DTOs.Ticket;
 using BugTracker.Entity;
 using BugTracker.Migrations;
+using BugTracker.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Sockets;
@@ -15,44 +19,21 @@ namespace BugTracker.Controllers
     public class TicketController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITicketService _ticketService;
         private readonly IMapper _mapper;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public TicketController(ApplicationDbContext context, IMapper mapper)
+        public TicketController(ApplicationDbContext context, ITicketService ticketService,IMapper mapper, UserManager<IdentityUser> userManager)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _ticketService = ticketService ?? throw new ArgumentNullException(nameof(ticketService));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         }
         [HttpGet]
         public async Task<ActionResult<List<TicketDTO>>> Get(int projectId)
         {
-            var ticketData = await _context.Tickets
-                .Where(ticketDB => ticketDB.ProjectId == projectId)
-                .Select(ticketDB => new
-                {
-                    ticket = ticketDB,
-                    submitterPersonName = _context.Personnel
-                        .Where(person => person.Id == ticketDB.SubmitterPersonId)
-                        .Select(person => person.Name)
-                        .FirstOrDefault(),
-                    assignedPersonName = _context.Personnel
-                        .Where(person => person.Id == ticketDB.AssignedPersonId)
-                        .Select(person => person.Name)
-                        .FirstOrDefault(),
-                    projectName = _context.Projects
-                        .Where(project => project.Id == ticketDB.ProjectId)
-                        .Select(project => project.Name)
-                        .FirstOrDefault()
-                })
-                .ToListAsync();
-
-            var tickets = ticketData.Select(ticket => {
-                var ticketDTO = _mapper.Map<TicketDTO>(ticket.ticket);
-                ticketDTO.SubmitterPersonName = ticket.submitterPersonName;
-                ticketDTO.AssignedPerson = ticket.assignedPersonName;
-                ticketDTO.ProjectName = ticket.projectName;
-
-                return ticketDTO;
-            }).ToList();
+            var tickets = await _ticketService.GetListTicketDetails(projectId);
 
             return tickets;
         }
@@ -60,46 +41,28 @@ namespace BugTracker.Controllers
         [HttpGet("{id:int}", Name = "GetTicket")]
         public async Task<ActionResult<TicketDTOWithDetails>> Get(int projectId, int id)
         {
-            var ticket = await _context.Tickets
-                .Where(ticketDB => ticketDB.ProjectId == projectId)
-                .Select(ticketDB => new
-                {
-                    ticket = ticketDB,
-                    submitterPersonName = _context.Personnel
-                        .Where(person => person.Id == ticketDB.SubmitterPersonId)
-                        .Select(person => person.Name)
-                        .FirstOrDefault(),
-                    assignedPersonName = _context.Personnel
-                        .Where(person => person.Id == ticketDB.AssignedPersonId)
-                        .Select(person => person.Name)
-                        .FirstOrDefault(),
-                    projectName = _context.Projects
-                        .Where(project => project.Id == ticketDB.ProjectId)
-                        .Select(project => project.Name)
-                        .FirstOrDefault()
-                })
-                .FirstOrDefaultAsync(x => x.ticket.Id == id);
-
+            var ticket = await _ticketService.GetTicketDetails(projectId, id);
 
             if (ticket == null)
                 return NotFound();
 
-            var result = _mapper.Map<TicketDTOWithDetails>(ticket.ticket);
-            result.ProjectName = ticket.projectName;
-            result.SubmitterPersonName = ticket.submitterPersonName;
-            result.AssignedPerson = ticket.assignedPersonName;
-            return result;
+            return ticket;
         }
 
         [HttpPost]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> Post(int projectId, TicketCreationDTO ticketCreationDTO)
         {
-            var projectExists = await _context.Projects.AnyAsync(x => x.Id == projectId);
+            var emailClaim = HttpContext.User.Claims.Where(claim => claim.Type == "email").FirstOrDefault();
+            var email = emailClaim.Value;
+            var submitter = await _userManager.FindByEmailAsync(email);
+            var submitterId = submitter.Id;
+            var projectExists = await _ticketService.IsProjectExist(projectId);
 
-            if (!projectExists)
+            if (projectExists == null)
                 return NotFound();
 
-            var submitterPerson = await _context.Personnel.FindAsync(ticketCreationDTO.SubmitterPersonId);
+            var submitterPerson = await _ticketService.IsSubmitterExist(ticketCreationDTO.SubmitterPersonId);
 
             if (submitterPerson == null)
                 return NotFound();
@@ -107,23 +70,24 @@ namespace BugTracker.Controllers
             var ticket = _mapper.Map<Ticket>(ticketCreationDTO);
             ticket.ProjectId = projectId;
 
-
-            _context.Add(ticket);
-            await _context.SaveChangesAsync();
+            await _ticketService.SaveTicket(ticket);            
 
             var ticketDTOWithDetails = _mapper.Map<TicketDTOWithDetails>(ticket);
+            ticketDTOWithDetails.ProjectName = projectExists.Name;
+            ticketDTOWithDetails.SubmitterPersonName = submitterPerson.Name;
+            ticketDTOWithDetails.SubmitterPersonId = submitterId;
+            //hace falta cambiar el tiket entity para que use strings
             return CreatedAtRoute("GetTicket", new { projectId = ticket.ProjectId, id = ticket.Id }, ticketDTOWithDetails);
         }
 
         [HttpPut("{id:int}")]
         public async Task<ActionResult> Put(int id, int projectId, TicketUpdateDTO ticketUpdateDTO)
         {
+
             var ticketDB = await _context.Tickets
                 .FirstOrDefaultAsync(x => x.Id == id);
             if (ticketDB == null)
                 return NotFound();
-            //if (ticketUpdateDTO.ProjectId != projectId)
-            //    return BadRequest("Why did you try to update a ticket in a different project?");
 
             ticketDB = _mapper.Map(ticketUpdateDTO, ticketDB);
 

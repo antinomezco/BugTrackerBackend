@@ -3,6 +3,8 @@ using BugTracker.DTOs.Person;
 using BugTracker.DTOs.Ticket;
 using BugTracker.Entity;
 using BugTracker.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +14,7 @@ namespace BugTracker.Controllers
 {
     [Route("api/personnel")]
     [ApiController]
+        [Authorize(AuthenticationSchemes =JwtBearerDefaults.AuthenticationScheme)]
     public class PersonnelController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -26,6 +29,7 @@ namespace BugTracker.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = "IsAdmin")]
         public async Task<ActionResult<List<PersonDTO>>> Get()
         {
             var personnel = await _context.Personnel.ToListAsync();
@@ -35,6 +39,8 @@ namespace BugTracker.Controllers
 
 
         [HttpGet("{id:int}", Name = "GetPerson")]
+        [AllowAnonymous]
+
         public async Task<ActionResult<PersonDTOWithProjects>> Get(int id)
         {
             var person = await _context.Personnel
@@ -45,12 +51,12 @@ namespace BugTracker.Controllers
             if (person == null)
                 return NotFound();
 
-            var temp = _mapper.Map<PersonDTOWithProjects>(person);
-
             return _mapper.Map<PersonDTOWithProjects>(person);
         }
 
         [HttpGet("{id:int}/tickets", Name = "GetPersonTickets")]
+        [AllowAnonymous]
+
         public async Task<ActionResult<PersonDTOWithTickets>> GetPersonTickets(int id)
         {
             var person = await _context.Personnel
@@ -95,6 +101,8 @@ namespace BugTracker.Controllers
         }
 
         [HttpPost]
+        [AllowAnonymous]
+
         public async Task<ActionResult> Post(PersonCreationDTO personCreationDTO)
         {
             var existePersonaConElMismoNombre = await _context.Personnel.AnyAsync(x => x.Name == personCreationDTO.Name);
@@ -114,6 +122,8 @@ namespace BugTracker.Controllers
         }
 
         [HttpPut("{id:int}")]
+        [AllowAnonymous]
+
         public async Task<ActionResult> Put(int id, PersonUpdateDTO personUpdateDTO)
         {
             var personDB = await _context.Personnel
@@ -129,6 +139,8 @@ namespace BugTracker.Controllers
         }
 
         [HttpPatch("{id:int}")]
+        [AllowAnonymous]
+
         public async Task<ActionResult> Patch(int id, JsonPatchDocument<PersonPatchDTO> patchDocument)
         {
             if (patchDocument == null)
@@ -154,6 +166,15 @@ namespace BugTracker.Controllers
 
             return NoContent();
 
+        }
+        [HttpDelete]
+        public async Task<ActionResult> Delete(int id)
+        {
+            var exists = await _context.Personnel.AnyAsync(x=>x.Id== id);
+            if(!exists) return NotFound();
+            _context.Remove(new Person() { Id = id});
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
     }
 }
