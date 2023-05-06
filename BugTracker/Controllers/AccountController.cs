@@ -1,10 +1,13 @@
 ﻿using BugTracker.DTOs.Person;
+using BugTracker.Entity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -15,18 +18,20 @@ namespace BugTracker.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
-        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly ApplicationDbContext _context;
 
         public AccountController(
-            UserManager<IdentityUser> userManager, 
-            IConfiguration configuration, 
-            SignInManager<IdentityUser> signInManager)
+            UserManager<ApplicationUser> userManager,
+            IConfiguration configuration,
+            SignInManager<ApplicationUser> signInManager, ApplicationDbContext context)
         {
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
+            _context = context;
         }
 
         [HttpGet("RenewToken")]
@@ -42,30 +47,43 @@ namespace BugTracker.Controllers
             return await BuildToken(userCredentials);
         }
 
-        [HttpPost("MakeAdmin")]
-        public async Task<ActionResult> MakeAdmin(AddRemoveClaim addRemoveClaim)
+        [HttpPost("AddRole")]
+        private async Task<ActionResult> AddRole(AddRemoveClaim addRemoveClaim)
         {
             var user = await _userManager.FindByEmailAsync(addRemoveClaim.Email);
-            await _userManager.AddClaimAsync(user, new Claim("IsAdmin", "1"));
+            var person = await _context.Personnel.FirstOrDefaultAsync(x => x.Email == addRemoveClaim.Email);
+            await _userManager.AddClaimAsync(user, new Claim($"Is{person.Role}", "1"));
             return NoContent();
         }
 
-        [HttpPost("RemoveAdmin")]
-        public async Task<ActionResult> RemoveAdmin(AddRemoveClaim addRemoveClaim)
+        [HttpPost("RemoveRole")]
+        public async Task<ActionResult> RemoveRole(AddRemoveClaim addRemoveClaim)
         {
             var user = await _userManager.FindByEmailAsync(addRemoveClaim.Email);
-            await _userManager.RemoveClaimAsync(user, new Claim("IsAdmin", "1"));
+            var person = await _context.Personnel.FirstOrDefaultAsync(x => x.Email == addRemoveClaim.Email);
+            await _userManager.RemoveClaimAsync(user, new Claim($"Is{person.Role}", "1"));
             return NoContent();
         }
 
         [HttpPost("register")]
         public async Task<ActionResult<AuthenticationResponse>> Register(UserCredentials userCredentials)
         {
-            var user = new IdentityUser { UserName = userCredentials.Email, Email = userCredentials.Email };
+            var user = new ApplicationUser { UserName = userCredentials.Email, Email = userCredentials.Email };
             var result = await _userManager.CreateAsync(user, userCredentials.Password);
 
+
             if (result.Succeeded)
+            {
+                //maybe I can use an automapper instead, with default values for role and createddate from the dto
+                var createUser = new Person
+                {
+                    Name = userCredentials.Email,
+                    Email = userCredentials.Email,
+                };
+                _context.Personnel.Add(createUser);
+
                 return await BuildToken(userCredentials);
+            }
             else
                 return BadRequest(result.Errors);
         }
@@ -76,7 +94,11 @@ namespace BugTracker.Controllers
             var result = await _signInManager.PasswordSignInAsync(userCredentials.Email, userCredentials.Password, isPersistent: false, lockoutOnFailure: false);
 
             if (result.Succeeded)
+            {
+                var addRemoveClaim = new AddRemoveClaim { Email = userCredentials.Email };
+                await AddRole(addRemoveClaim);
                 return await BuildToken(userCredentials);
+            }
             else
                 return BadRequest("Incorrect user details");
         }

@@ -105,11 +105,11 @@ namespace BugTracker.Controllers
 
         public async Task<ActionResult> Post(PersonCreationDTO personCreationDTO)
         {
-            var existePersonaConElMismoNombre = await _context.Personnel.AnyAsync(x => x.Name == personCreationDTO.Name);
+            var existePersonaConElMismoCorreo = await _context.Personnel.AnyAsync(x => x.Email == personCreationDTO.Email);
 
-            if (existePersonaConElMismoNombre)
+            if (existePersonaConElMismoCorreo)
             {
-                return BadRequest($"Ya existe autor con el nombre {personCreationDTO.Name}");
+                return BadRequest($"Ya existe autor con el correo {personCreationDTO.Email}");
             }
 
             var person = _mapper.Map<Person>(personCreationDTO);

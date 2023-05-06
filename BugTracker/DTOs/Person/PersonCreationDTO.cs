@@ -16,6 +16,6 @@ namespace BugTracker.DTOs.Person
 
         [Required]
         [EnumDataType(typeof(PersonRole))]
-        public PersonRole Role { get; set; }
+        public PersonRole Role { get; set; } = PersonRole.User;
     }
 }

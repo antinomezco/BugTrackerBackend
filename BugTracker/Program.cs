@@ -1,4 +1,5 @@
 using BugTracker;
+using BugTracker.Entity;
 using BugTracker.Repositories;
 using BugTracker.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -73,7 +74,7 @@ services.AddSwaggerGen(c=>
     });
 });
 services.AddAutoMapper(typeof(Program));
-services.AddIdentity<IdentityUser, IdentityRole>()
+services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
