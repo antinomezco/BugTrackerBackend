@@ -7,9 +7,6 @@ namespace BugTracker.DTOs.Person
     {
         [Required]
         public string Name { get; set; }
-
-        [Required]
-        public string Email { get; set; }
         [EnumDataType(typeof(PersonRole))]
         public int? Role { get; set; }
     }

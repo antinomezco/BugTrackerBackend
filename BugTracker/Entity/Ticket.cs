@@ -13,7 +13,7 @@ namespace BugTracker.Entity
         public int SubmitterPersonId { get; set; }
         public string SubmitterId { get; set; }
         public Person SubmitterPerson { get; set; }
-        public IdentityUser Submitter { get; set; }
+        public ApplicationUser Submitter { get; set; }
         public int? AssignedPersonId { get; set; }
         public Person AssignedPerson { get; set; }
         public bool IsResolved { get; set; } = false;

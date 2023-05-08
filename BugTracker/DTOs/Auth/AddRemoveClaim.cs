@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace BugTracker.DTOs.Person
+namespace BugTracker.DTOs.Auth
 {
     public class AddRemoveClaim
     {

@@ -21,9 +21,9 @@ namespace BugTracker.Controllers
         private readonly ApplicationDbContext _context;
         private readonly ITicketService _ticketService;
         private readonly IMapper _mapper;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public TicketController(ApplicationDbContext context, ITicketService ticketService,IMapper mapper, UserManager<IdentityUser> userManager)
+        public TicketController(ApplicationDbContext context, ITicketService ticketService,IMapper mapper, UserManager<ApplicationUser> userManager)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _ticketService = ticketService ?? throw new ArgumentNullException(nameof(ticketService));

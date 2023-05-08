@@ -1,4 +1,4 @@
-﻿namespace BugTracker.DTOs.Person
+﻿namespace BugTracker.DTOs.Auth
 {
     public class AuthenticationResponse
     {

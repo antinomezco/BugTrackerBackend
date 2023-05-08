@@ -13,7 +13,7 @@ namespace BugTracker.DTOs.Ticket
         public string ProjectName { get; set; }
         public string SubmitterPersonId { get; set; }
         public string SubmitterId { get; set; }
-        public IdentityUser Submitter { get; set; }
+        public ApplicationUser Submitter { get; set; }
         public string SubmitterPersonName { get; set; }
         public int? AssignedPersonId { get; set; }
         public string AssignedPerson { get; set; }

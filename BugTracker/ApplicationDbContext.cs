@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BugTracker
 {
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         public ApplicationDbContext(DbContextOptions options) : base(options)
         {
@@ -16,6 +16,11 @@ namespace BugTracker
 
             modelBuilder.Entity<PersonProject>()
                 .HasKey(pp => new { pp.PersonId, pp.ProjectId});
+
+            modelBuilder.Entity<ApplicationUser>()
+            .HasOne(p => p.Person)
+            .WithOne(a => a.ApplicationUser)
+            .HasForeignKey<Person>(a => a.ApplicationUserId);
         }
 
         public DbSet<Person> Personnel { get; set; }

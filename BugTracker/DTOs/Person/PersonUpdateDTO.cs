@@ -9,9 +9,6 @@ namespace BugTracker.DTOs.Person
         public string Name { get; set; }
 
         [Required]
-        public string Email { get; set; }
-
-        [Required]
         public int Role { get; set; }
     }
 }
