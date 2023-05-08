@@ -1,4 +1,4 @@
-﻿using BugTracker.DTOs.Person;
+﻿using BugTracker.DTOs.Auth;
 using BugTracker.Entity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -57,7 +57,7 @@ namespace BugTracker.Controllers
         }
 
         [HttpPost("RemoveRole")]
-        public async Task<ActionResult> RemoveRole(AddRemoveClaim addRemoveClaim)
+        private async Task<ActionResult> RemoveRole(AddRemoveClaim addRemoveClaim)
         {
             var user = await _userManager.FindByEmailAsync(addRemoveClaim.Email);
             var person = await _context.Personnel.FirstOrDefaultAsync(x => x.Email == addRemoveClaim.Email);
@@ -81,6 +81,7 @@ namespace BugTracker.Controllers
                     Email = userCredentials.Email,
                 };
                 _context.Personnel.Add(createUser);
+                await _context.SaveChangesAsync();
 
                 return await BuildToken(userCredentials);
             }
@@ -100,7 +101,15 @@ namespace BugTracker.Controllers
                 return await BuildToken(userCredentials);
             }
             else
-                return BadRequest("Incorrect user details");
+                return BadRequest("Invalid email or password");
+        }
+
+        [HttpPost("logout")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ActionResult> Logout()
+        {
+            await _signInManager.SignOutAsync();
+            return NoContent();
         }
 
         private async Task<AuthenticationResponse> BuildToken(UserCredentials userCredentials)

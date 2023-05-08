@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using BugTracker.DTOs.InfoDisplay;
 using BugTracker.DTOs.Person;
 using BugTracker.DTOs.Ticket;
 using BugTracker.Entity;
 using BugTracker.Services;
+using BugTracker.Utilities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -29,10 +31,12 @@ namespace BugTracker.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "IsAdmin")]
-        public async Task<ActionResult<List<PersonDTO>>> Get()
+        //[Authorize(Policy = "IsAdmin")]
+        public async Task<ActionResult<List<PersonDTO>>> Get([FromQuery] PaginationDTO paginationDTO)
         {
-            var personnel = await _context.Personnel.ToListAsync();
+            var queryable = _context.Personnel.AsQueryable();
+            await HttpContext.InsertPaginationParametersInHeader(queryable);
+            var personnel = await queryable.OrderBy(person=>person.Name).Paginate(paginationDTO).ToListAsync();
 
             return _mapper.Map<List<PersonDTO>>(personnel);
         }

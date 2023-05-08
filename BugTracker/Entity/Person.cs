@@ -11,15 +11,15 @@ namespace BugTracker.Entity
         public string? Email{ get; set; }
         public PersonRole Role { get; set; }
         public DateTime? CreatedDate  { get; set; }
-        public List<PersonProject>? PersonnelProjects { get; set; }
-        public ApplicationUser? ApplicationUser { get; set; }
-        public string? ApplicationUserId { get; set; }
+        public List<PersonProject> PersonnelProjects { get; set; }
+        public ApplicationUser ApplicationUser { get; set; }
+        public string ApplicationUserId { get; set; }
     }
     public enum PersonRole
     {
         User,
         Developer,
-        Project_manager,
+        ProjectManager,
         Admin
     }
 }
