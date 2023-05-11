@@ -5,9 +5,10 @@ namespace BugTracker.Repositories
 {
     public interface ITicketRepository
     {
-        Task<List<TicketInfoDTO>> GetTicketList(int id);
-
-        Task<TicketInfoDTO> GetTicket(int projectId, int id);
+        Task<List<Ticket>> GetTicketList(int id);
+        Task<Ticket> GetTicket(int projectId, int id);
+        Task<List<Ticket>> GetTickets(int id);
+        IQueryable<Ticket> GetTicketQueryableList(int id);
         Task<Ticket> SaveTicketToDatabase(Ticket ticket);
     }
 }

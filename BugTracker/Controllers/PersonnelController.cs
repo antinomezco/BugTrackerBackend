@@ -3,6 +3,7 @@ using BugTracker.DTOs.InfoDisplay;
 using BugTracker.DTOs.Person;
 using BugTracker.DTOs.Ticket;
 using BugTracker.Entity;
+using BugTracker.Repositories;
 using BugTracker.Services;
 using BugTracker.Utilities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -16,41 +17,36 @@ namespace BugTracker.Controllers
 {
     [Route("api/personnel")]
     [ApiController]
-        [Authorize(AuthenticationSchemes =JwtBearerDefaults.AuthenticationScheme)]
+        //[Authorize(AuthenticationSchemes =JwtBearerDefaults.AuthenticationScheme)]
     public class PersonnelController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IPersonRepository _personRepository;
+        private readonly ITicketService _ticketService;
         private readonly IMapper _mapper;
-        private readonly IProjectService _projectService;
 
-        public PersonnelController(ApplicationDbContext context, IMapper mapper, IProjectService projectService)
+        public PersonnelController(IPersonRepository personRepository, ITicketService ticketService,IMapper mapper)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _personRepository = personRepository ?? throw new ArgumentNullException(nameof(personRepository));
+            _ticketService = ticketService ?? throw new ArgumentNullException(nameof(ticketService));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-            _projectService = projectService ?? throw new ArgumentNullException(nameof(projectService));
         }
 
         [HttpGet]
         //[Authorize(Policy = "IsAdmin")]
         public async Task<ActionResult<List<PersonDTO>>> Get([FromQuery] PaginationDTO paginationDTO)
         {
-            var queryable = _context.Personnel.AsQueryable();
+            var queryable = _personRepository.GetQueryablePeople();
             await HttpContext.InsertPaginationParametersInHeader(queryable);
             var personnel = await queryable.OrderBy(person=>person.Name).Paginate(paginationDTO).ToListAsync();
 
             return _mapper.Map<List<PersonDTO>>(personnel);
         }
 
-
         [HttpGet("{id:int}", Name = "GetPerson")]
         [AllowAnonymous]
-
         public async Task<ActionResult<PersonDTOWithProjects>> Get(int id)
         {
-            var person = await _context.Personnel
-                .Include(personDB => personDB.PersonnelProjects)
-                .ThenInclude(personnelProjectDb => personnelProjectDb.Project)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            var person = await _personRepository.GetPerson(id);
 
             if (person == null)
                 return NotFound();
@@ -58,68 +54,50 @@ namespace BugTracker.Controllers
             return _mapper.Map<PersonDTOWithProjects>(person);
         }
 
-        [HttpGet("{id:int}/tickets", Name = "GetPersonTickets")]
-        [AllowAnonymous]
+        //[HttpGet("{id:int}/tickets", Name = "GetPersonTickets")]
+        //[AllowAnonymous]
+        //public async Task<ActionResult<PersonDTOWithTickets>> GetPersonTickets(int id)
+        //{
+        //    var person = await _personRepository.GetPersonWithDetails(id);
+        //    var ticketData = await _ticketService.GetTicketsDetails(id);
 
-        public async Task<ActionResult<PersonDTOWithTickets>> GetPersonTickets(int id)
-        {
-            var person = await _context.Personnel
-                .FirstOrDefaultAsync(x => x.Id == id);
-            var ticketData = await _context.Tickets
-                .Where(ticketDB => ticketDB.AssignedPersonId == id)
-                .Select(ticketDB => new
-                {   
-                    ticket = ticketDB,
-                    submitterPersonName = _context.Personnel
-                        .Where(person => person.Id == ticketDB.SubmitterPersonId)
-                        .Select(person => person.Name)
-                        .FirstOrDefault(),
-                    assignedPersonName = _context.Personnel
-                        .Where(person => person.Id == ticketDB.AssignedPersonId)
-                        .Select(person => person.Name)
-                        .FirstOrDefault(),
-                    projectName = _context.Projects
-                        .Where(project => project.Id == ticketDB.ProjectId)
-                        .Select(project => project.Name)
-                        .FirstOrDefault()
-                })
-                .ToListAsync();
+        //    if (person == null)
+        //        return NotFound();
 
-            if (person == null)
-                return NotFound();
+        //    var tickets = ticketData.Select(ticket => {
+        //        var ticketDTO = _mapper.Map<TicketDTO>(ticket);
+        //        ticketDTO.SubmitterPersonName = ticket.SubmitterPersonName;
+        //        ticketDTO.AssignedPerson = ticket.AssignedPerson;
+        //        ticketDTO.Description = ticket.Description;
+        //        ticketDTO.ProjectId = ticket.ProjectId;
+        //        ticketDTO.AssignedPersonId = ticket.AssignedPersonId;
+        //        ticketDTO.SubmitterId = ticket.SubmitterId;
+        //        ticketDTO.ProjectName = ticket.ProjectName;
 
-            var tickets = ticketData.Select(ticket => {
-                var ticketDTO = _mapper.Map<TicketDTO>(ticket.ticket);
-                ticketDTO.SubmitterPersonName = ticket.submitterPersonName;
-                ticketDTO.AssignedPerson = ticket.assignedPersonName;
-                ticketDTO.ProjectName = ticket.projectName;
+        //        return ticketDTO;
+        //    }).ToList();
 
-                return ticketDTO;
-            }).ToList();
+        //    var personWithTickets = _mapper.Map<PersonDTOWithTickets>(person);
 
-            var personWithTickets = _mapper.Map<PersonDTOWithTickets>(person);
+        //    personWithTickets.Tickets = tickets;
 
-            personWithTickets.Tickets = tickets;
-
-            return personWithTickets;
-        }
+        //    return personWithTickets;
+        //}
 
         [HttpPost]
         [AllowAnonymous]
-
         public async Task<ActionResult> Post(PersonCreationDTO personCreationDTO)
         {
-            var existePersonaConElMismoCorreo = await _context.Personnel.AnyAsync(x => x.Email == personCreationDTO.Email);
+            var PersonWithTheSameEmailExists = await _personRepository.CheckIfUserWithSameEmailExists(personCreationDTO);
 
-            if (existePersonaConElMismoCorreo)
+            if (PersonWithTheSameEmailExists)
             {
                 return BadRequest($"Ya existe autor con el correo {personCreationDTO.Email}");
             }
 
             var person = _mapper.Map<Person>(personCreationDTO);
 
-            _context.Add(person);
-            await _context.SaveChangesAsync();
+            await _personRepository.SaveToDB(person);
 
             var PersonDTO = _mapper.Map<PersonDTO>(person);
             return CreatedAtRoute("GetPerson", new {id  = person.Id}, PersonDTO);
@@ -127,57 +105,54 @@ namespace BugTracker.Controllers
 
         [HttpPut("{id:int}")]
         [AllowAnonymous]
-
         public async Task<ActionResult> Put(int id, PersonUpdateDTO personUpdateDTO)
         {
-            var personDB = await _context.Personnel
-                .Include(x=>x.PersonnelProjects)
-                .FirstOrDefaultAsync(x=>x.Id== id);
+            var personDB = await _personRepository.GetPerson(id);
             if (personDB == null)
                 return NotFound();
 
             personDB = _mapper.Map(personUpdateDTO, personDB);
 
-            await _context.SaveChangesAsync();
+            await _personRepository.SaveChanges();
             return NoContent();
         }
 
         [HttpPatch("{id:int}")]
         [AllowAnonymous]
 
-        public async Task<ActionResult> Patch(int id, JsonPatchDocument<PersonPatchDTO> patchDocument)
-        {
-            if (patchDocument == null)
-                return BadRequest();
+        //public async Task<ActionResult> Patch(int id, JsonPatchDocument<PersonPatchDTO> patchDocument)
+        //{
+        //    if (patchDocument == null)
+        //        return BadRequest();
 
-            var personDB = await _context.Personnel.FirstOrDefaultAsync(x=>x.Id== id);
+        //    var personDB = await _context.Personnel.FirstOrDefaultAsync(x=>x.Id== id);
 
-            if(personDB == null)
-                return NotFound();
+        //    if(personDB == null)
+        //        return NotFound();
 
-            var personDTO = _mapper.Map<PersonPatchDTO>(personDB);
+        //    var personDTO = _mapper.Map<PersonPatchDTO>(personDB);
 
-            patchDocument.ApplyTo(personDTO, ModelState);
+        //    patchDocument.ApplyTo(personDTO, ModelState);
 
-            var isValid = TryValidateModel(personDTO);
+        //    var isValid = TryValidateModel(personDTO);
 
-            if(!isValid)
-                return BadRequest(ModelState);
+        //    if(!isValid)
+        //        return BadRequest(ModelState);
 
-            _mapper.Map(personDTO, personDB);
+        //    _mapper.Map(personDTO, personDB);
 
-            await _context.SaveChangesAsync();
+        //    await _personRepository.SaveChanges();
 
-            return NoContent();
+        //    return NoContent();
 
-        }
+        //}
         [HttpDelete]
         public async Task<ActionResult> Delete(int id)
         {
-            var exists = await _context.Personnel.AnyAsync(x=>x.Id== id);
-            if(!exists) return NotFound();
-            _context.Remove(new Person() { Id = id});
-            await _context.SaveChangesAsync();
+            var exists = await _personRepository.CheckPersonExists(id);
+            if(exists == null) return NotFound();
+            _personRepository.DeletePerson(id);
+            await _personRepository.SaveChanges();
             return NoContent();
         }
     }

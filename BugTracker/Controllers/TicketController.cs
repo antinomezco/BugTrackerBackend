@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
+using BugTracker.DTOs.InfoDisplay;
 using BugTracker.DTOs.Person;
 using BugTracker.DTOs.Ticket;
 using BugTracker.Entity;
 using BugTracker.Migrations;
 using BugTracker.Services;
+using BugTracker.Utilities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -31,11 +33,13 @@ namespace BugTracker.Controllers
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         }
         [HttpGet]
-        public async Task<ActionResult<List<TicketDTO>>> Get(int projectId)
+        public async Task<ActionResult<List<TicketDTO>>> Get(int projectId, [FromQuery] PaginationDTO paginationDTO)
         {
-            var tickets = await _ticketService.GetListTicketDetails(projectId);
-
-            return tickets;
+            var queryable = _ticketService.GetQueryableTicketDetails(projectId);
+            await HttpContext.InsertPaginationParametersInHeader(queryable);
+            var tickets = await queryable.Paginate(paginationDTO).ToListAsync();
+            var ticketDTO = _mapper.Map<List<TicketDTO>>(tickets);
+            return ticketDTO;
         }
 
         [HttpGet("{id:int}", Name = "GetTicket")]
@@ -62,7 +66,7 @@ namespace BugTracker.Controllers
             if (projectExists == null)
                 return NotFound();
 
-            var submitterPerson = await _ticketService.IsSubmitterExist(ticketCreationDTO.SubmitterPersonId);
+            var submitterPerson = await _ticketService.IsSubmitterExist(ticketCreationDTO.SubmitterId);
 
             if (submitterPerson == null)
                 return NotFound();
@@ -75,7 +79,7 @@ namespace BugTracker.Controllers
             var ticketDTOWithDetails = _mapper.Map<TicketDTOWithDetails>(ticket);
             ticketDTOWithDetails.ProjectName = projectExists.Name;
             ticketDTOWithDetails.SubmitterPersonName = submitterPerson.Name;
-            ticketDTOWithDetails.SubmitterPersonId = submitterId;
+            //ticketDTOWithDetails.SubmitterId = submitterId;
             //hace falta cambiar el tiket entity para que use strings
             return CreatedAtRoute("GetTicket", new { projectId = ticket.ProjectId, id = ticket.Id }, ticketDTOWithDetails);
         }

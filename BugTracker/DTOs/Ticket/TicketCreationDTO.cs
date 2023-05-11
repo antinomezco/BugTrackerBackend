@@ -6,7 +6,7 @@ namespace BugTracker.DTOs.Ticket
     {
         public string Title { get; set; }
         public string Description { get; set; }
-        public int SubmitterPersonId { get; set; }
+        public int SubmitterId { get; set; }
         public DateTime CreatedDate { get; set; }
     }
 }
