@@ -14,53 +14,39 @@ namespace BugTracker.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<List<TicketInfoDTO>> GetTicketList(int id)
+        public async Task<List<Ticket>> GetTicketList(int id)
         {
             var tickets = await _context.Tickets
-                .Where(ticketDB => ticketDB.AssignedPersonId == id)
-                .Select(ticketDB => new TicketInfoDTO
-                {
-                    Ticket = ticketDB,
-                    SubmitterPersonName = _context.Personnel
-                        .Where(person => person.Id == ticketDB.SubmitterPersonId)
-                        .Select(person => person.Name)
-                        .FirstOrDefault(),
-                    AssignedPersonName = _context.Personnel
-                        .Where(person => person.Id == ticketDB.AssignedPersonId)
-                        .Select(person => person.Name)
-                        .FirstOrDefault(),
-                    ProjectName = _context.Projects
-                        .Where(project => project.Id == ticketDB.ProjectId)
-                        .Select(project => project.Name)
-                        .FirstOrDefault()
-                })
+                .Where(ticketDB => ticketDB.ProjectId == id)
                 .ToListAsync();
             return tickets;
         }
 
-        public async Task<TicketInfoDTO> GetTicket(int projectId, int id)
+        public async Task<Ticket> GetTicket(int projectId, int id)
         {
             var ticket = await _context.Tickets
                 .Where(ticketDB => ticketDB.ProjectId == projectId)
-                .Select(ticketDB => new TicketInfoDTO
-                {
-                    Ticket = ticketDB,
-                    SubmitterPersonName = _context.Personnel
-                        .Where(person => person.Id == ticketDB.SubmitterPersonId)
-                        .Select(person => person.Name)
-                        .FirstOrDefault(),
-                    AssignedPersonName = _context.Personnel
-                        .Where(person => person.Id == ticketDB.AssignedPersonId)
-                        .Select(person => person.Name)
-                        .FirstOrDefault(),
-                    ProjectName = _context.Projects
-                        .Where(project => project.Id == ticketDB.ProjectId)
-                        .Select(project => project.Name)
-                        .FirstOrDefault()
-                })
-                .FirstOrDefaultAsync(x => x.Ticket.Id == id);
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             return ticket;
+        }
+
+        public async Task<List<Ticket>> GetTickets(int id)
+        {
+            var tickets = await _context.Tickets
+                .Where(ticketDB => ticketDB.AssignedPersonId == id)
+                .ToListAsync();
+
+            return tickets;
+        }
+
+        public IQueryable<Ticket> GetTicketQueryableList(int id)
+        {
+            var tickets = _context.Tickets
+                .Where(ticketDB => ticketDB.ProjectId == id)
+                .AsQueryable();
+
+            return tickets;
         }
 
         public async Task<Ticket> SaveTicketToDatabase(Ticket ticket)

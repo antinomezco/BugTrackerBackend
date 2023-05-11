@@ -3,6 +3,7 @@ using BugTracker.DTOs.Project;
 using BugTracker.Entity;
 using BugTracker.Repositories;
 using BugTracker.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace BugTracker.Services
 {
@@ -28,13 +29,9 @@ namespace BugTracker.Services
             var tickets = await _ticketService.GetListTicketDetails(id);
 
             var projectWithTicketDetails = _mapper.Map<ProjectDTOWithPersonnel>(project);
-            projectWithTicketDetails.Tickets = tickets;
+            //projectWithTicketDetails.Tickets = tickets;
 
             return projectWithTicketDetails;
-        }
-        public void AddProject(Project project)
-        {
-            _projectRepository.PostProject(project);
         }
 
         public Task<Project> UpdateProject(int id)

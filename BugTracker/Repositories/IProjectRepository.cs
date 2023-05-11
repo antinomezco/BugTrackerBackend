@@ -8,5 +8,6 @@ namespace BugTracker.Repositories
         void PostProject(Project project);
         Task<Project> PutProject(int id);
         Task<Project> CheckProjectExists(int id);
+        Task<List<Project>> GetProjectsAsync();
     }
 }

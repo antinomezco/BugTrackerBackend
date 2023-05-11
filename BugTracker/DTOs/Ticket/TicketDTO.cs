@@ -11,10 +11,9 @@ namespace BugTracker.DTOs.Ticket
         public string Description { get; set; }
         public int ProjectId { get; set; }
         public string ProjectName { get; set; }
-        public string SubmitterPersonId { get; set; }
-        public string SubmitterId { get; set; }
-        public ApplicationUser Submitter { get; set; }
+        public int SubmitterId { get; set; }
         public string SubmitterPersonName { get; set; }
+        //public ApplicationUser Submitter { get; set; }
         public int? AssignedPersonId { get; set; }
         public string AssignedPerson { get; set; }
         public bool IsResolved { get; set; }
@@ -23,8 +22,11 @@ namespace BugTracker.DTOs.Ticket
     public class TicketInfoDTO
     {
         public Entity.Ticket Ticket { get; set; }
-        public string SubmitterPersonName { get; set; }
-        public string AssignedPersonName { get; set; }
-        public string ProjectName { get; set; }
+        public Entity.Person AssignedPerson { get; set; }
+        public Entity.Person SubmitterPerson { get; set; }
+        public Entity.Project TicketProject { get; set; }
+        //public string SubmitterPersonName { get; set; }
+        //public string AssignedPersonName { get; set; }
+        //public string ProjectName { get; set; }
     }
 }

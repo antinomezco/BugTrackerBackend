@@ -1,4 +1,5 @@
-﻿using BugTracker.Entity;
+﻿using BugTracker.DTOs.Project;
+using BugTracker.Entity;
 using Microsoft.EntityFrameworkCore;
 
 namespace BugTracker.Repositories
@@ -12,12 +13,18 @@ namespace BugTracker.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
+        public async Task<List<Project>> GetProjectsAsync()
+        {
+            var project = await _context.Projects.ToListAsync();
+            return project;
+        }
+
         public async Task<Project> GetProjectAsync(int id)
         {
             return await _context.Projects
-                .Include(projectDB => projectDB.Tickets)
                 .Include(projectDB => projectDB.PersonnelProjects)
                 .ThenInclude(personnelProjectDB => personnelProjectDB.Person)
+                .Include(projectDB => projectDB.Tickets.Where(t => t.ProjectId == id))
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 

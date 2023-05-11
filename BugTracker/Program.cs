@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -28,6 +29,7 @@ services.AddControllers()
              JsonIgnoreCondition.WhenWritingNull;
 
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+
 }).AddNewtonsoftJson();
     
 services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("defaultConnection")));

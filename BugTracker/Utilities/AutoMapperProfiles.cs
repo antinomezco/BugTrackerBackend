@@ -17,7 +17,7 @@ namespace BugTracker.Utilities
             CreateMap<Person, PersonDTOWithProjects>()
                 .ForMember(personDTO => personDTO.Projects, options => options.MapFrom(MapPersonDTOProjects));
             CreateMap<Person, PersonDTOWithTickets>();
-                //.ForMember(personDTO => personDTO.Tickets, options => options.MapFrom(MapPersonDTOTickets));
+            //.ForMember(personDTO => personDTO.Tickets, options => options.MapFrom(MapPersonDTOTickets));
 
 
             CreateMap<ProjectCreationDTO, Project>();
@@ -28,11 +28,12 @@ namespace BugTracker.Utilities
                 .ForMember(projectDTO => projectDTO.Personnel, options => options.MapFrom(MapProjectDTOPersonnel))
                 .ForMember(dest => dest.Tickets, opt => opt.MapFrom(src => src.Tickets))
                 .ForMember(dest => dest.Personnel, opt => opt.MapFrom(src => src.PersonnelProjects.Select(pp => pp.Person)));
-            
+
 
             CreateMap<TicketCreationDTO, Ticket>();
             CreateMap<Ticket, TicketDTOWithDetails>();
-            CreateMap<Ticket, TicketDTO>();
+            CreateMap<Ticket, TicketDTO>()
+                .ForMember(dest => dest.AssignedPerson, opt => opt.MapFrom(src => src.AssignedPerson.Name));
             CreateMap<TicketUpdateDTO, Ticket>();
         }
 
@@ -80,7 +81,7 @@ namespace BugTracker.Utilities
             if (project.PersonnelProjects == null)
                 return result;
 
-            foreach(var projectPerson in project.PersonnelProjects)
+            foreach (var projectPerson in project.PersonnelProjects)
             {
                 result.Add(new PersonDTO()
                 {
